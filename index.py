@@ -3,9 +3,10 @@ import asyncio
 import threading
 import requests
 from requests import status_codes
+from utils import get_data
 from .local_cubacrypt import cypher as encrypt
 
-API = "https://api.senarc.org/semethon/"
+API = get_data("config", "server")
 
 def send_message(token, content):
 	encrypted_string = encrypt(content)
