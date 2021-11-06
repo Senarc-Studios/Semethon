@@ -13,15 +13,15 @@ def send_message(token, content):
 		"token": token,
 		"esm": encrypted_string
 	}
-	response = requests.post(API, payload=payload)
+	response = requests.post(API + "send-message", payload=payload)
 	if response.status_code == 200:
 		print(f"<{response.json['username']}> {content}\n")
 
 def scan_for_content(payload):
-	response = requests.post(API + "message-updates", payload)
+	response = requests.post(API + "fetch-messages", payload)
 	if response.status_code == 404:
 		return None
-	else:    		
+	else:
 		message = requests.post(API + "decrypt", response.json())
 		print(f"<{response['username']}> {message.json()}")
 
