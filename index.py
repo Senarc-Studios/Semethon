@@ -30,7 +30,7 @@ def create_session(username):
 	payload = {
 		"username": username
 	}
-	response = requests.post(API + "session/create", payload=payload)
+	response = requests.post(API + "create-session", payload=payload)
 	if response.status_code == 200:
 		print(f"Your Session has been created, here is your token.\n\nTOKEN: {response.json['token']}.")
 
@@ -48,7 +48,7 @@ def join_session(token, username):
 		"token": token,
 		"username": username
 	}
-	response = requests.post(API + "session/join", payload=payload)
+	response = requests.post(API + "join-session", payload=payload)
 	if response == 200:
 		print(f"You have joined {response.json['host']}'s session.")
 
@@ -78,7 +78,7 @@ def execute_option(type):
 
 	elif type == "create":
 		username = input("Enter your username: ")
-		if username != "" and len(username) <= 3:
+		if username != "" and len(username) >= 3 and len(username) <= 20:
 			return create_session(username)
 
 def selector():
