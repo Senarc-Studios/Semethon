@@ -15,9 +15,7 @@ def send_message(token, username, content):
 		"username": username,
 		"esm": encrypted_string
 	}
-	response = requests.post(API + "send-message", json=payload)
-	if response.status_code == 200:
-		print(f"<{response.json['username']}> {content}\n")
+	requests.post(API + "send-message", json=payload)
 
 async def scan_for_content(payload):
 	while True:
@@ -35,6 +33,10 @@ def loop_input(token, username):
 		message = input(f"<{username}> ")
 		send_message(token, username, message)
 
+def keep_alive(payload):
+	loop = asyncio.get_event_loop()
+	loop.run_until_complete(scan_for_content(payload))
+
 def create_session(username):
 	payload = {
 		"username": username
@@ -48,14 +50,9 @@ def create_session(username):
 		"username": username
 	}
 
-	thread = threading.Thread(target=keep_alive, name="Message Scanner", args=payload)
+	thread = threading.Thread(target=keep_alive(payload), name="Message Scanner")
 	thread.start()
-	loop_input(token, username)
-
-def keep_alive(payload):
-	loop = asyncio.get_event_loop()
-	loop.run_until_complete(scan_for_content(payload))
-	loop.close()
+	loop_input(payload["token"], username)
 
 def join_session(token, username):
 	payload = {
@@ -69,7 +66,7 @@ def join_session(token, username):
 	else:
 		print("Session token invalid.")
 
-	thread = threading.Thread(target=keep_alive, name="Message Scanner", args=payload)
+	thread = threading.Thread(target=keep_alive(payload), name="Message Scanner")
 	thread.start()
 	loop_input(token, username)
 
@@ -91,12 +88,12 @@ def execute_option(type):
 			print("Invalid Session Token.")
 			return execute_option(type)
 		username = input("Enter your username: ")
-		if username != "" and len(username) <= 3:
-			return { "token": token, "username": username }
+		if len(username) >= 3 and len(username) <= 20:
+			return join_session(token, username)
 
 	elif type == "create":
 		username = input("Enter your username: ")
-		if username != "" and len(username) >= 3 and len(username) <= 20:
+		if len(username) >= 3 and len(username) <= 20:
 			return create_session(username)
 
 def selector():
