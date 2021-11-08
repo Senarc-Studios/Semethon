@@ -8,23 +8,32 @@ from .local_cubacrypt import cypher as encrypt
 
 API = get_data("config", "server")
 
-def send_message(token, content):
+def send_message(token, username, content):
 	encrypted_string = encrypt(content)
 	payload = {
 		"token": token,
+		"username": username,
 		"esm": encrypted_string
 	}
 	response = requests.post(API + "send-message", payload=payload)
 	if response.status_code == 200:
 		print(f"<{response.json['username']}> {content}\n")
 
-def scan_for_content(payload):
-	response = requests.post(API + "fetch-messages", payload)
-	if response.status_code == 404:
-		return None
-	else:
-		message = requests.post(API + "decrypt", response.json())
-		print(f"<{response['username']}> {message.json()}")
+async def scan_for_content(payload):
+	while True:
+		response = requests.post(API + "fetch-messages", payload)
+		if response.status_code == 404:
+			return None
+		else:
+			message = requests.post(API + "decrypt", response.json())
+			print(f"<{response['username']}> {message.json()}")
+
+		await asyncio.sleep(1)
+
+def loop_input(token, username):
+	while True:
+		message = input(f"<{username}> ")
+		send_message(token, username, message)
 
 def create_session(username):
 	payload = {
@@ -32,16 +41,21 @@ def create_session(username):
 	}
 	response = requests.post(API + "create-session", payload=payload)
 	if response.status_code == 200:
-		print(f"Your Session has been created, here is your token.\n\nTOKEN: {response.json['token']}.")
+		print(f"Your Session has been created, here is your token.\n\nTOKEN: {response.json()['token']}.")
 
-async def keep_alive(token, username):
 	payload = {
-		"token": token,
+		"token": response.json()['token'],
 		"username": username
 	}
-	thread = threading.Thread(target=scan_for_content, name="Message Scanner", args=payload)
+
+	thread = threading.Thread(target=keep_alive, name="Message Scanner", args=payload)
 	thread.start()
-	await asyncio.sleep(1)
+	loop_input(token, username)
+
+def keep_alive(payload):
+	loop = asyncio.get_event_loop()
+	loop.run_until_complete(scan_for_content(payload))
+	loop.close()
 
 def join_session(token, username):
 	payload = {
@@ -55,11 +69,15 @@ def join_session(token, username):
 	else:
 		print("Session token invalid.")
 
+	thread = threading.Thread(target=keep_alive, name="Message Scanner", args=payload)
+	thread.start()
+	loop_input(token, username)
+
 def validate_session(token):
 	payload = {
 		"token": token
 	}
-	response = requests.post(API + "validate", payload=payload)
+	response = requests.post(API + "validate-session", payload=payload)
 	if response.status_code == 200:
 		return True
 	else:
@@ -92,3 +110,5 @@ def selector():
 	else:
 		print("Abort.")
 		return sys.exit()
+
+selector()
