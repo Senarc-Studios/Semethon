@@ -4,7 +4,7 @@ import threading
 import requests
 from requests import status_codes
 from utils import get_data
-from .local_cubacrypt import cypher as encrypt
+from local_cubacrypt import cypher as encrypt
 
 API = get_data("config", "server")
 
@@ -15,7 +15,7 @@ def send_message(token, username, content):
 		"username": username,
 		"esm": encrypted_string
 	}
-	response = requests.post(API + "send-message", payload=payload)
+	response = requests.post(API + "send-message", json=payload)
 	if response.status_code == 200:
 		print(f"<{response.json['username']}> {content}\n")
 
@@ -39,7 +39,7 @@ def create_session(username):
 	payload = {
 		"username": username
 	}
-	response = requests.post(API + "create-session", payload=payload)
+	response = requests.post(API + "create-session", json=payload)
 	if response.status_code == 200:
 		print(f"Your Session has been created, here is your token.\n\nTOKEN: {response.json()['token']}.")
 
@@ -62,7 +62,7 @@ def join_session(token, username):
 		"token": token,
 		"username": username
 	}
-	response = requests.post(API + "join-session", payload=payload)
+	response = requests.post(API + "join-session", json=payload)
 	if response == 200:
 		print(f"You have joined {response.json['host']}'s session.")
 
@@ -77,7 +77,7 @@ def validate_session(token):
 	payload = {
 		"token": token
 	}
-	response = requests.post(API + "validate-session", payload=payload)
+	response = requests.post(API + "validate-session", json=payload)
 	if response.status_code == 200:
 		return True
 	else:
