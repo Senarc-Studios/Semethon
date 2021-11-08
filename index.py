@@ -26,7 +26,7 @@ async def scan_for_content(payload):
 			return None
 		else:
 			message = requests.post(API + "decrypt", response.json())
-			print(f"<{response['username']}> {message.json()}")
+			print(f"<{response.json()['author']}> {message.json()['message']}")
 
 		await asyncio.sleep(1)
 
