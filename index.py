@@ -1,7 +1,11 @@
+import subprocess
 import sys
+import utils
 import asyncio
+import subprocess
 import threading
 import requests
+from subprocess import PIPE, STDOUT
 from requests import status_codes
 from utils import get_data
 from local_cubacrypt import cypher as encrypt
@@ -17,25 +21,21 @@ def send_message(token, username, content):
 	}
 	requests.post(API + "send-message", json=payload)
 
-async def scan_for_content(payload):
+def scan_for_content():
+	subprocess.run(utils.get_command("python") + " receiver.py", stdout=PIPE, stderr=STDOUT, shell=True, text=True)
 	while True:
-		response = requests.post(API + "fetch-messages", payload)
-		if response.status_code == 404:
-			return None
+		if utils.Cache.size() == 2:
+			return
 		else:
-			message = requests.post(API + "decrypt", response.json())
-			print(f"<{response.json()['author']}> {message.json()['message']}")
-
-		await asyncio.sleep(1)
+			message = utils.Cache.load("message")
+			content = message["message"]
+			author = message["author"]
+			print(f"<{author}> {message}")
 
 def loop_input(token, username):
 	while True:
 		message = input(f"<{username}> ")
 		send_message(token, username, message)
-
-def keep_alive(payload):
-	loop = asyncio.get_event_loop()
-	loop.run_until_complete(scan_for_content(payload))
 
 def create_session(username):
 	payload = {
@@ -50,7 +50,10 @@ def create_session(username):
 		"username": username
 	}
 
-	thread = threading.Thread(target=keep_alive(payload), name="Message Scanner")
+	utils.Cache.store("token", response.json()['token'])
+	utils.Cache.store("username", username)
+
+	thread = threading.Thread(target=scan_for_content, name="Message Scanner")
 	thread.start()
 	loop_input(payload["token"], username)
 
@@ -66,7 +69,10 @@ def join_session(token, username):
 	else:
 		print("Session token invalid.")
 
-	thread = threading.Thread(target=keep_alive(payload), name="Message Scanner")
+	utils.Cache.store("token", token)
+	utils.Cache.store("username", username)
+
+	thread = threading.Thread(target=scan_for_content, name="Message Scanner")
 	thread.start()
 	loop_input(token, username)
 
