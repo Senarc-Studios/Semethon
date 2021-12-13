@@ -1,16 +1,17 @@
 import subprocess
 import sys
-import utils
+import cool_utils
 import asyncio
 import subprocess
 import threading
 import requests
 from subprocess import PIPE, STDOUT
 from requests import status_codes
-from utils import get_data
+from cool_utils import get_data
 from local_cubacrypt import cypher as encrypt
 
-API = get_data("config", "server")
+cool_utils.JSON.open("config")
+API = get_data("server")
 
 def send_message(token, username, content):
 	encrypted_string = encrypt(content)
@@ -22,12 +23,12 @@ def send_message(token, username, content):
 	requests.post(API + "send-message", json=payload)
 
 def scan_for_content():
-	subprocess.run(utils.get_command("python") + " receiver.py", stdout=PIPE, stderr=STDOUT, shell=True, text=True)
+	subprocess.run(cool_utils.get_command("python") + " receiver.py", stdout=PIPE, stderr=STDOUT, shell=True, text=True)
 	while True:
-		if utils.Cache.size() == 2:
+		if cool_utils.Cache.size() == 2:
 			return
 		else:
-			message = utils.Cache.load("message")
+			message = cool_utils.Cache.load("message")
 			content = message["message"]
 			author = message["author"]
 			print(f"<{author}> {message}")
